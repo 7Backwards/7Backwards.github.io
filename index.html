@@ -611,6 +611,85 @@
     </div>
   </footer>
 
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+    import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCFiiHf5mA-q-7t45uFDlzOlfRgmT6m-AU",
+      authDomain: "cv-website-cfccb.firebaseapp.com",
+      projectId: "cv-website-cfccb",
+      storageBucket: "cv-website-cfccb.firebasestorage.app",
+      messagingSenderId: "313500270037",
+      appId: "1:313500270037:web:45a1df20cdd194e838915c",
+      measurementId: "G-LPCBHWZFV7"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+
+    // ── TIME ON PAGE ──────────────────────────────────────────
+    const pageStart = Date.now();
+    function logTimeOnPage() {
+      const seconds = Math.round((Date.now() - pageStart) / 1000);
+      logEvent(analytics, 'page_time', { seconds });
+    }
+    window.addEventListener('beforeunload', logTimeOnPage);
+    [30, 60, 120, 300].forEach(function(s) {
+      setTimeout(function() {
+        logEvent(analytics, 'page_time_' + s + 's');
+      }, s * 1000);
+    });
+
+    // ── SCROLL TRACKING ───────────────────────────────────────
+    const scrollMilestones = new Set();
+    window.addEventListener('scroll', function() {
+      const pct = Math.round((window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100);
+      [25, 50, 75, 100].forEach(function(milestone) {
+        if (pct >= milestone && !scrollMilestones.has(milestone)) {
+          scrollMilestones.add(milestone);
+          logEvent(analytics, 'scrolled_' + milestone + '_percent');
+        }
+      });
+    }, { passive: true });
+
+    // ── SECTION VIEW TRACKING ─────────────────────────────────
+    const sectionObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          logEvent(analytics, 'viewed_section_' + (entry.target.id || 'unknown').toLowerCase());
+          sectionObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.5 });
+
+    ['hero', 'about', 'experience', 'portfolio', 'skills', 'education', 'contact'].forEach(function(id) {
+      const el = document.getElementById(id);
+      if (el) sectionObserver.observe(el);
+    });
+
+    // ── CLICK TRACKING ────────────────────────────────────────
+    const tracked = [
+      { selector: 'a[href="#experience"]', event: 'click_view_work' },
+      { selector: 'a[href*="SharePoint"]', event: 'click_resume' },
+      { selector: 'a[href*="apps.apple.com"]', event: 'click_app_store' },
+      { selector: 'a[href*="github.com"]', event: 'click_github' },
+      { selector: 'a[href*="linkedin.com"]', event: 'click_linkedin' },
+      { selector: 'a[href="mailto:"]', event: 'click_email' },
+      { selector: 'a[href*="outlier.ai"]', event: 'click_external_link' },
+      { selector: '.project-card', event: 'click_project' },
+      { selector: '.nav-toggle', event: 'click_nav_toggle' }
+    ];
+
+    tracked.forEach(function(item) {
+      document.querySelectorAll(item.selector).forEach(function(el) {
+        el.addEventListener('click', function() {
+          logEvent(analytics, item.event);
+        });
+      });
+    });
+  </script>
+
   <script type="module" src="/src/main.js"></script>
 </body>
 
